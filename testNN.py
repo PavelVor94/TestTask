@@ -1,6 +1,6 @@
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
-import tensorflow as tf
+from sklearn import svm
 from imutils import paths
 import numpy as np
 import random
@@ -36,35 +36,16 @@ labels = np.array(labels)
 lb = LabelBinarizer()
 labels = lb.fit_transform(labels)
 
-
 # разделяем данные на обучающий набор и тестовый
 trainX, testX, trainY, testY = train_test_split(data, labels, test_size=0.25)
 
-
 # создаем модель
-model = tf.keras.Sequential([
-	tf.keras.layers.Dense(1152, input_shape=(2304,)),
-	tf.keras.layers.BatchNormalization(axis=1),
-	tf.keras.layers.Dropout(0.2),
-	tf.keras.layers.Dense(576, activation='relu'),
-	tf.keras.layers.BatchNormalization(axis=1),
-	tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(288, activation='relu'),
-	tf.keras.layers.BatchNormalization(axis=1),
-	tf.keras.layers.Dropout(0.2),
-	tf.keras.layers.Dense(2, activation='softmax'),
-])
 
-model.compile(optimizer='adam',
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
+model = svm.SVC(kernel='poly')
+model.fit(trainX,trainY.ravel())
 
 
-#тренируем модель. провобовал разное количество эпох. остановился на 50.
-model.fit(trainX, trainY, epochs=50)
-test_loss, test_acc = model.evaluate(testX,  testY, verbose=1)
 
-print('Тест точности:', test_acc)
 
 # проходим по проверочным изображениям и выводим их с надписями к какому классу относиться объект и с какой вероятностью
 for test_img in TEST_IMAGES:
@@ -78,10 +59,10 @@ for test_img in TEST_IMAGES:
 	print(preds)
 
 
-	i = preds.argmax(axis=1)[0]
-	label = lb.classes_[i]
 
-	text = "{}: {:.2f}%".format(label, preds[0][i] * 100)
+	label = lb.classes_[preds]
+
+	text = "{}".format(label)
 	cv2.putText(output, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
 	cv2.imshow("Image", output)
